@@ -581,14 +581,9 @@ function App(){
     });
   },[st]);
 
-  // Show loading screen while state loads
-  if(!st) return h("div",{style:{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:"100vh",background:"#0f1117",gap:16}},
-    h("img",{src:LOGO,style:{width:72,opacity:.8},alt:"CDC"}),
-    h("div",{style:{color:"#f5c518",fontSize:14,fontWeight:700,letterSpacing:1}})
-  );
-
   /* 4pm notification */
   useEffect(()=>{
+    if(!st)return;
     if(notifRef.current)clearTimeout(notifRef.current);
     if(!st.notifEnabled||Notification.permission!=="granted")return;
     const sched=()=>{
@@ -604,7 +599,13 @@ function App(){
     };
     sched();
     return()=>{if(notifRef.current)clearTimeout(notifRef.current);};
-  },[st.notifEnabled,st.notifTime]);
+  },[st?.notifEnabled,st?.notifTime]);
+
+  // Show loading screen while state loads
+  if(!st) return h("div",{style:{display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",minHeight:"100vh",background:"#0f1117",gap:16}},
+    h("img",{src:LOGO,style:{width:72,opacity:.8},alt:"CDC"}),
+    h("div",{style:{color:"#f5c518",fontSize:14,fontWeight:700,letterSpacing:1}})
+  );
 
   const upd=p=>setSt(prev=>({...prev,...p}));
   const setTools=fn=>setSt(p=>({...p,tools:typeof fn==="function"?fn(p.tools):fn}));
