@@ -520,8 +520,28 @@ function PhotoPick({onPhoto,lbl,prev}){
     ):h("div",{onClick:()=>ref.current.click(),style:{background:C.surface,border:"2px dashed "+C.border,borderRadius:12,padding:24,cursor:"pointer",color:C.muted,textAlign:"center",marginBottom:12}},
       h("div",{style:{fontSize:28,marginBottom:4}},"📷"),h("div",{style:{fontSize:13}},lbl||"Tap to take photo")
     ),
-    h("input",{ref,type:"file",accept:"image/*",capture:"environment",style:{display:"none"},onChange:x=>{const f=x.target.files[0];if(!f)return;const r=new FileReader();r.onload=v=>onPhoto(v.target.result);r.readAsDataURL(f);}})
+    h("input",{ref,type:"file",accept:"image/*",capture:"environment",style:{display:"none"},onChange:x=>{const f=x.target.files[0];if(!f)return;const r=new FileReader();r.onload=v=>compressPhoto(v.target.result,onPhoto);r.readAsDataURL(f);}})
   );
+}
+
+/* ══════════════════════════════════════════
+   PHOTO COMPRESSION
+   Resizes any photo to max 800px and compresses to ~50-80KB
+══════════════════════════════════════════ */
+function compressPhoto(dataUrl,callback){
+  const img=new Image();
+  img.onload=()=>{
+    const MAX=800;
+    let w=img.width,h=img.height;
+    if(w>h){if(w>MAX){h=Math.round(h*MAX/w);w=MAX;}}
+    else{if(h>MAX){w=Math.round(w*MAX/h);h=MAX;}}
+    const canvas=document.createElement('canvas');
+    canvas.width=w;canvas.height=h;
+    const ctx=canvas.getContext('2d');
+    ctx.drawImage(img,0,0,w,h);
+    callback(canvas.toDataURL('image/jpeg',0.7));
+  };
+  img.src=dataUrl;
 }
 
 /* ══════════════════════════════════════════
@@ -1281,7 +1301,7 @@ function StaffTab({staff,setStaff,tools,sites,canManage}){
             h("div",{style:{position:"relative",flexShrink:0}},
               h(Av,{p:s,sz:52}),
               h("div",{onClick:e=>{e.stopPropagation();refs.current[s.id]&&refs.current[s.id].click();},style:{position:"absolute",bottom:-2,right:-2,background:col,borderRadius:"50%",width:20,height:20,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,cursor:"pointer",border:"2px solid "+C.surface}},"📷"),
-              h("input",{ref:x=>refs.current[s.id]=x,type:"file",accept:"image/*",capture:"environment",style:{display:"none"},onChange:x=>{const f=x.target.files[0];if(!f)return;const r=new FileReader();r.onload=v=>upd(s.id,{photo:v.target.result});r.readAsDataURL(f);}})
+              h("input",{ref:x=>refs.current[s.id]=x,type:"file",accept:"image/*",capture:"environment",style:{display:"none"},onChange:x=>{const f=x.target.files[0];if(!f)return;const r=new FileReader();r.onload=v=>compressPhoto(v.target.result,d=>upd(s.id,{photo:d}));r.readAsDataURL(f);}})
             ),
             h("div",{style:{flex:1}},
               h("div",{style:{color:C.text,fontWeight:700,fontSize:15}},s.name),
@@ -1302,7 +1322,7 @@ function StaffTab({staff,setStaff,tools,sites,canManage}){
         editS.photo
           ?h("div",{style:{position:"relative",display:"inline-block"}},
               h("img",{src:editS.photo,style:{width:90,height:90,borderRadius:"50%",objectFit:"cover",border:"3px solid "+roleColor(editS.role||"Permanent")}}),
-              h("button",{onClick:()=>{const inp=document.createElement("input");inp.type="file";inp.accept="image/*";inp.capture="environment";inp.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=v=>setEditS(es=>({...es,photo:v.target.result}));r.readAsDataURL(f);};inp.click();},style:{position:"absolute",bottom:0,right:0,background:roleColor(editS.role),border:"none",borderRadius:"50%",width:28,height:28,cursor:"pointer",fontSize:14,display:"flex",alignItems:"center",justifyContent:"center"}},"📷")
+              h("button",{onClick:()=>{const inp=document.createElement("input");inp.type="file";inp.accept="image/*";inp.capture="environment";inp.onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=v=>compressPhoto(v.target.result,d=>setEditS(es=>({...es,photo:d})));r.readAsDataURL(f);};inp.click();},style:{position:"absolute",bottom:0,right:0,background:roleColor(editS.role),border:"none",borderRadius:"50%",width:28,height:28,cursor:"pointer",fontSize:14,display:"flex",alignItems:"center",justifyContent:"center"}},"📷")
             )
           :h(PhotoPick,{onPhoto:p=>setEditS(es=>({...es,photo:p})),lbl:"Tap to add photo"})
       ),
